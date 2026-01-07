@@ -9,32 +9,45 @@ import SwiftUI
 import SwiftData
 
 struct MainFeedView: View {
-    // Sort Oldest to Newest, so the "Newest" is right above the blank page
+    // Sort Oldest -> Newest (History grows downwards, ending at the Blank Page)
     @Query(sort: \Quote.dateCreated, order: .forward) private var historyQuotes: [Quote]
     
     var body: some View {
         NavigationStack {
-            ScrollView(.vertical) {
-                LazyVStack(spacing: 0) {
-                    
-                    // PART 1: The History (Above the blank page)
-                    ForEach(historyQuotes) { quote in
-                        QuoteEditorView(quoteToEdit: quote)
+            ScrollViewReader { proxy in
+                ScrollView(.vertical) {
+                    // CHANGED: LazyVStack -> VStack
+                    // This ensures the scrollview "knows" the history exists above you immediately.
+                    VStack(spacing: 0) {
+                        
+                        // PART 1: The History (Above)
+                        ForEach(historyQuotes) { quote in
+                            QuoteEditorView(quoteToEdit: quote)
+                                .containerRelativeFrame(.vertical)
+                                .id(quote.id) // Unique ID for every quote
+                        }
+                        
+                        // PART 2: The New Entry (Bottom)
+                        QuoteEditorView(quoteToEdit: nil)
                             .containerRelativeFrame(.vertical)
-                            .id(quote.id) // Identify for scrolling if needed
+                            .id("new_entry_page") // We will auto-scroll to this
                     }
-                    
-                    // PART 2: The New Entry (At the bottom)
-                    QuoteEditorView(quoteToEdit: nil)
-                        .containerRelativeFrame(.vertical)
-                        .id("new_entry_page")
+                }
+                .scrollTargetBehavior(.paging) // Snap to pages
+                .ignoresSafeArea()
+                .background(.black)
+                .onAppear {
+                    // Force jump to the bottom (The Blank Page) immediately
+                    // The .immediate update ensures you don't see it scrolling
+                    proxy.scrollTo("new_entry_page", anchor: .bottom)
+                }
+                // Also scroll to bottom when a new quote is added
+                .onChange(of: historyQuotes.count) {
+                    withAnimation {
+                        proxy.scrollTo("new_entry_page", anchor: .bottom)
+                    }
                 }
             }
-            .scrollTargetBehavior(.paging) // Snap to pages
-            .ignoresSafeArea()
-            .background(.black)
-            // This magic line makes the app open at the bottom (The Blank Page)
-            .defaultScrollAnchor(.bottom)
         }
     }
 }
