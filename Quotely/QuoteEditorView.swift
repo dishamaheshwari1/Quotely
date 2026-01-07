@@ -12,7 +12,13 @@ struct QuoteEditorView: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(\.dismiss) private var dismiss
     
+    // The quote we are editing (or nil if it's a new one)
     var quoteToEdit: Quote?
+    
+    // HELPER: checks if this is a past quote or the blank page
+    var isHistoryItem: Bool {
+        return quoteToEdit != nil
+    }
     
     @State private var quoteText: String = ""
     @State private var noteText: String = ""
@@ -58,6 +64,8 @@ struct QuoteEditorView: View {
                         .foregroundColor(isLightBackground ? .black : .white)
                         .focused($isFocused)
                         .padding(.top, 10)
+                        // Disable typing on history items so keyboard doesn't pop up while scrolling
+                        .disabled(isHistoryItem)
                     
                     TextField("note to self...", text: $noteText)
                         .fontDesign(.serif)
@@ -66,6 +74,7 @@ struct QuoteEditorView: View {
                         .multilineTextAlignment(.center)
                         .foregroundColor(isLightBackground ? .black.opacity(0.8) : .white.opacity(0.8))
                         .focused($isFocused)
+                        .disabled(isHistoryItem)
                 }
                 .padding(25)
                 .background(.ultraThinMaterial)
@@ -77,23 +86,24 @@ struct QuoteEditorView: View {
                 Spacer()
                 
                 // LAYER 3: Buttons
-                HStack(spacing: 40) {
-                    Button(action: saveQuote) {
-                        HStack {
-                            Image(systemName: "arrow.up.doc.fill") // Icon changed to UP
-                            Text("Save")
+                // Only show buttons on the NEW page. History items should be clean.
+                if !isHistoryItem {
+                    HStack(spacing: 40) {
+                        Button(action: saveQuote) {
+                            HStack {
+                                Image(systemName: "arrow.up.doc.fill")
+                                Text("Save")
+                            }
+                            .fontDesign(.serif)
+                            .fontWeight(.medium)
+                            .foregroundColor(isLightBackground ? .black : .white)
+                            .padding(.vertical, 12)
+                            .padding(.horizontal, 25)
+                            .background(.ultraThinMaterial)
+                            .clipShape(Capsule())
+                            .shadow(radius: 5)
                         }
-                        .fontDesign(.serif)
-                        .fontWeight(.medium)
-                        .foregroundColor(isLightBackground ? .black : .white)
-                        .padding(.vertical, 12)
-                        .padding(.horizontal, 25)
-                        .background(.ultraThinMaterial)
-                        .clipShape(Capsule())
-                        .shadow(radius: 5)
-                    }
-                    
-                    if quoteToEdit == nil {
+                        
                         NavigationLink(destination: QuoteListView()) {
                             Image(systemName: "square.grid.2x2")
                                 .font(.title2)
@@ -104,8 +114,8 @@ struct QuoteEditorView: View {
                                 .shadow(radius: 5)
                         }
                     }
+                    .padding(.bottom, 30)
                 }
-                .padding(.bottom, 30)
             }
             
             // LAYER 4: Feedback
@@ -128,9 +138,11 @@ struct QuoteEditorView: View {
                 colorIndex = existing.colorIndex
             }
         }
-        // USE SIMULTANEOUS GESTURE to allow scrolling history
+        // GESTURE LOGIC:
+        // IF it is a history item: Pass 'nil' (No gesture). This lets the ScrollView handle the touch.
+        // IF it is the new page: Pass 'DragGesture'. This handles color swipes and saving.
         .simultaneousGesture(
-            DragGesture()
+            isHistoryItem ? nil : DragGesture()
                 .onEnded { value in
                     let horizontalAmount = value.translation.width
                     let verticalAmount = value.translation.height
@@ -143,9 +155,8 @@ struct QuoteEditorView: View {
                             changeColor(direction: -1)
                         }
                     }
-                    // Vertical Swipe UP (Save) - Only if creating NEW
-                    // We check < -100 (Negative means finger moved UP)
-                    else if verticalAmount < -100 && quoteToEdit == nil {
+                    // Vertical Swipe UP (Save)
+                    else if verticalAmount < -100 {
                         saveQuote()
                     }
                 }
@@ -163,29 +174,20 @@ struct QuoteEditorView: View {
     func saveQuote() {
         guard !quoteText.isEmpty else { return }
         
-        if let existing = quoteToEdit {
-            // Edit existing
-            existing.text = quoteText
-            existing.note = noteText
-            existing.colorIndex = colorIndex
-        } else {
-            // Create New
-            let newQuote = Quote(text: quoteText, note: noteText, colorIndex: colorIndex)
-            modelContext.insert(newQuote)
-            
-            // Visual Reset
-            // Because this is a SwiftUI List, the new quote will appear ABOVE us
-            // And this view will remain "blank" at the bottom
-            quoteText = ""
-            noteText = ""
-        }
+        // Always creating new in this context
+        let newQuote = Quote(text: quoteText, note: noteText, colorIndex: colorIndex)
+        modelContext.insert(newQuote)
         
         isFocused = false
         
         withAnimation { showSaveConfirmation = true }
+        
+        // Reset the blank page
+        quoteText = ""
+        noteText = ""
+        
         DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
             withAnimation { showSaveConfirmation = false }
-            if quoteToEdit != nil { dismiss() }
         }
     }
 }
