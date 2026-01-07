@@ -19,6 +19,7 @@ struct QuoteEditorView: View {
     @State private var showSaveConfirmation: Bool = false
     
     // 3. JEWEL TONES CONFIGURATION
+    // Order: Sepia -> Rainbow (R-O-Y-G-B-P) -> Neutrals (Brown-Gray-Black)
     let backgroundColors: [Color] = [
         Color(red: 0.925, green: 0.784, blue: 0.604), // 0. Sepia
         Color(red: 0.6, green: 0.05, blue: 0.1),      // 1. Ruby Red
@@ -32,9 +33,9 @@ struct QuoteEditorView: View {
         Color.black                                   // 9. Black
     ]
     
-    // Helper to determine if text should be dark or light
+    // Helper to determine if text should be dark (for light backgrounds)
     var isLightBackground: Bool {
-        // Sepia (0) and Golden Yellow (3) are bright enough for black text
+        // Sepia (0) and Golden Yellow (3) need black text
         return colorIndex == 0 || colorIndex == 3
     }
     
@@ -53,52 +54,54 @@ struct QuoteEditorView: View {
                 VStack(spacing: 0) {
                     Spacer()
                     
-                    VStack(spacing: 15) {
-                        // The Main Quote Input
-                        TextEditor(text: $quoteText)
+                    VStack(spacing: 20) {
+                        // The Main Quote Input (Now Dynamic!)
+                        TextField("type your quote here", text: $quoteText, axis: .vertical)
                             .fontDesign(.serif)
                             .font(.title2)
-                            .scrollContentBackground(.hidden) // <--- FIXES THE WHITE BOX ISSUE
-                            .background(Color.clear)          // Ensures transparency
-                            .frame(height: 300)
+                            .multilineTextAlignment(.center) // <--- Centered Text
                             .foregroundColor(isLightBackground ? .black : .white)
-                            .tint(isLightBackground ? .black : .white) // Cursor color
+                            .tint(isLightBackground ? .black : .white)
+                            .padding(.top, 10)
                         
                         // The "Note to Self" Input
-                        TextField("", text: $noteText, prompt: Text("note to self...").foregroundColor(isLightBackground ? .black.opacity(0.5) : .white.opacity(0.5)))
+                        TextField("note to self...", text: $noteText)
                             .fontDesign(.serif)
                             .font(.body)
                             .italic()
+                            .multilineTextAlignment(.center) // <--- Centered Text
                             .foregroundColor(isLightBackground ? .black.opacity(0.8) : .white.opacity(0.8))
                             .tint(isLightBackground ? .black : .white)
                     }
-                    .padding()
-                    .background(.ultraThinMaterial)
+                    .padding(25)
+                    .background(.ultraThinMaterial) // Liquid Glass effect
                     .clipShape(RoundedRectangle(cornerRadius: 25))
                     .shadow(color: .black.opacity(0.2), radius: 10, x: 0, y: 10)
                     .padding(.horizontal, 30)
+                    // Ensure the box has a minimum size but grows as you type
+                    .frame(minHeight: 150)
                     
                     Spacer()
                     
-                    // LAYER 3: Buttons at the Bottom
-                    HStack {
-                        // Save Button (Left)
+                    // LAYER 3: Buttons (Centered at Bottom)
+                    HStack(spacing: 40) { // Spacing between buttons
+                        // Save Button
                         Button(action: saveQuote) {
                             HStack {
                                 Image(systemName: "arrow.down.doc.fill")
                                 Text("Save")
                             }
                             .fontDesign(.serif)
+                            .fontWeight(.medium)
                             .foregroundColor(isLightBackground ? .black : .white)
                             .padding(.vertical, 12)
-                            .padding(.horizontal, 20)
+                            .padding(.horizontal, 25)
                             .background(.ultraThinMaterial)
                             .clipShape(Capsule())
+                            .shadow(radius: 5)
                         }
                         
-                        Spacer()
-                        
-                        // Grid/Library Button (Right)
+                        // Grid/Library Button
                         NavigationLink(destination: QuoteListView()) {
                             Image(systemName: "square.grid.2x2")
                                 .font(.title2)
@@ -106,10 +109,10 @@ struct QuoteEditorView: View {
                                 .padding(15)
                                 .background(.ultraThinMaterial)
                                 .clipShape(Circle())
+                                .shadow(radius: 5)
                         }
                     }
-                    .padding(.horizontal, 30)
-                    .padding(.bottom, 20)
+                    .padding(.bottom, 30) // Lift up from bottom edge
                 }
                 
                 // LAYER 4: "Saved" Feedback Overlay
@@ -122,7 +125,7 @@ struct QuoteEditorView: View {
                         .background(.thinMaterial)
                         .cornerRadius(10)
                         .transition(.scale.combined(with: .opacity))
-                        .zIndex(100) // Ensures it sits on top of everything
+                        .zIndex(100)
                 }
             }
             // GESTURES
@@ -135,9 +138,9 @@ struct QuoteEditorView: View {
                         // Detect Horizontal Swipe (Change Color)
                         if abs(horizontalAmount) > abs(verticalAmount) {
                             if horizontalAmount < -50 {
-                                changeColor(direction: 1) // Swipe Left
+                                changeColor(direction: 1) // Swipe Left (Next)
                             } else if horizontalAmount > 50 {
-                                changeColor(direction: -1) // Swipe Right
+                                changeColor(direction: -1) // Swipe Right (Previous)
                             }
                         }
                         // Detect Vertical Swipe Down (Save shortcut)
@@ -153,9 +156,15 @@ struct QuoteEditorView: View {
     
     func changeColor(direction: Int) {
         withAnimation {
-            let newIndex = colorIndex + direction
-            if newIndex >= 0 && newIndex < backgroundColors.count {
-                colorIndex = newIndex
+            let count = backgroundColors.count
+            // Modulo arithmetic for infinite looping
+            if direction > 0 {
+                // Moving forward: (0 -> 1 -> ... -> 9 -> 0)
+                colorIndex = (colorIndex + 1) % count
+            } else {
+                // Moving backward: (0 -> 9 -> ... -> 1 -> 0)
+                // We add 'count' before modulo to handle negative numbers correctly
+                colorIndex = (colorIndex - 1 + count) % count
             }
         }
     }
@@ -170,12 +179,10 @@ struct QuoteEditorView: View {
         
         withAnimation(.spring()) {
             showSaveConfirmation = true
-            // Reset text but keep color
             quoteText = ""
             noteText = ""
         }
         
-        // Hide "Saved" popup after 1.5 seconds
         DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
             withAnimation {
                 showSaveConfirmation = false
