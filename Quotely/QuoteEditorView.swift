@@ -20,17 +20,22 @@ struct QuoteEditorView: View {
     
     // 3. JEWEL TONES CONFIGURATION
     let backgroundColors: [Color] = [
-        Color(red: 0.925, green: 0.784, blue: 0.604),   // Sepia
-        Color(red: 0.6, green: 0.05, blue: 0.1),  // Ruby
-        Color(red: 0.05, green: 0.2, blue: 0.5),  // Sapphire
-        Color(red: 0.0, green: 0.4, blue: 0.25),  // Emerald
-        Color(red: 0.8, green: 0.3, blue: 0.0),   // Burnt Orange
-        Color(red: 0.35, green: 0.2, blue: 0.05) // Rich Deep Warm Brown
+        Color(red: 0.925, green: 0.784, blue: 0.604), // 0. Sepia
+        Color(red: 0.6, green: 0.05, blue: 0.1),      // 1. Ruby Red
+        Color(red: 0.8, green: 0.3, blue: 0.0),       // 2. Burnt Orange
+        Color(red: 0.95, green: 0.75, blue: 0.1),     // 3. Golden Yellow
+        Color(red: 0.0, green: 0.4, blue: 0.25),      // 4. Emerald Green
+        Color(red: 0.05, green: 0.2, blue: 0.5),      // 5. Sapphire Blue
+        Color(red: 0.35, green: 0.1, blue: 0.55),     // 6. Royal Purple
+        Color(red: 0.35, green: 0.2, blue: 0.05),     // 7. Rich Brown
+        Color(red: 0.25, green: 0.3, blue: 0.35),     // 8. Slate Gray
+        Color.black                                   // 9. Black
     ]
     
     // Helper to determine if text should be dark or light
     var isLightBackground: Bool {
-        return colorIndex == 5 // Sepia is index 5
+        // Sepia (0) and Golden Yellow (3) are bright enough for black text
+        return colorIndex == 0 || colorIndex == 3
     }
     
     var body: some View {

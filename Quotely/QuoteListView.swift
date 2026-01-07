@@ -21,12 +21,16 @@ struct QuoteListView: View {
     
     // Same colors for reference
     let backgroundColors: [Color] = [
-        Color(red: 0.925, green: 0.784, blue: 0.604),   // Sepia
-        Color(red: 0.6, green: 0.05, blue: 0.1),  // Ruby
-        Color(red: 0.05, green: 0.2, blue: 0.5),  // Sapphire
-        Color(red: 0.0, green: 0.4, blue: 0.25),  // Emerald
-        Color(red: 0.8, green: 0.3, blue: 0.0),   // Burnt Orange
-        Color(red: 0.35, green: 0.2, blue: 0.05) // Rich Deep Warm Brown
+        Color(red: 0.925, green: 0.784, blue: 0.604), // 0. Sepia
+        Color(red: 0.6, green: 0.05, blue: 0.1),      // 1. Ruby Red
+        Color(red: 0.8, green: 0.3, blue: 0.0),       // 2. Burnt Orange
+        Color(red: 0.95, green: 0.75, blue: 0.1),     // 3. Golden Yellow
+        Color(red: 0.0, green: 0.4, blue: 0.25),      // 4. Emerald Green
+        Color(red: 0.05, green: 0.2, blue: 0.5),      // 5. Sapphire Blue
+        Color(red: 0.35, green: 0.1, blue: 0.55),     // 6. Royal Purple
+        Color(red: 0.35, green: 0.2, blue: 0.05),     // 7. Rich Brown
+        Color(red: 0.25, green: 0.3, blue: 0.35),     // 8. Slate Gray
+        Color.black                                   // 9. Black
     ]
     
     var body: some View {
@@ -43,7 +47,7 @@ struct QuoteListView: View {
                                     .font(.headline)
                                     .lineLimit(4) // Only show first 4 lines
                                     .multilineTextAlignment(.leading)
-                                    .foregroundColor(quote.colorIndex == 5 ? .black : .white)
+                                    .foregroundColor((quote.colorIndex == 0 || quote.colorIndex == 3) ? .black : .white)
                                 
                                 Spacer()
                                 
