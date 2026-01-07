@@ -9,32 +9,29 @@ import SwiftUI
 import SwiftData
 
 struct QuoteEditorView: View {
-    // 1. DATABASE CONNECTIVITY
     @Environment(\.modelContext) private var modelContext
-    @Environment(\.dismiss) private var dismiss // To close the view if opened from Gallery
+    @Environment(\.dismiss) private var dismiss
     
-    // Optional: If this is passed, we are in "Edit Mode". If nil, we are in "New Mode".
     var quoteToEdit: Quote?
     
-    // 2. STATE VARIABLES
     @State private var quoteText: String = ""
     @State private var noteText: String = ""
     @State private var colorIndex: Int = 0
     @State private var showSaveConfirmation: Bool = false
-    @FocusState private var isFocused: Bool // To handle keyboard automatically
+    @FocusState private var isFocused: Bool
     
-    // 3. JEWEL TONES CONFIGURATION
+    // JEWEL TONES
     let backgroundColors: [Color] = [
-        Color(red: 0.925, green: 0.784, blue: 0.604), // 0. Sepia
-        Color(red: 0.6, green: 0.05, blue: 0.1),      // 1. Ruby Red
-        Color(red: 0.8, green: 0.3, blue: 0.0),       // 2. Burnt Orange
-        Color(red: 0.95, green: 0.75, blue: 0.1),     // 3. Golden Yellow
-        Color(red: 0.0, green: 0.4, blue: 0.25),      // 4. Emerald Green
-        Color(red: 0.05, green: 0.2, blue: 0.5),      // 5. Sapphire Blue
-        Color(red: 0.35, green: 0.1, blue: 0.55),     // 6. Royal Purple
-        Color(red: 0.35, green: 0.2, blue: 0.05),     // 7. Rich Brown
-        Color(red: 0.25, green: 0.3, blue: 0.35),     // 8. Slate Gray
-        Color.black                                   // 9. Black
+        Color(red: 0.925, green: 0.784, blue: 0.604), // Sepia
+        Color(red: 0.6, green: 0.05, blue: 0.1),      // Ruby
+        Color(red: 0.8, green: 0.3, blue: 0.0),       // Orange
+        Color(red: 0.95, green: 0.75, blue: 0.1),     // Yellow
+        Color(red: 0.0, green: 0.4, blue: 0.25),      // Emerald
+        Color(red: 0.05, green: 0.2, blue: 0.5),      // Sapphire
+        Color(red: 0.35, green: 0.1, blue: 0.55),     // Purple
+        Color(red: 0.35, green: 0.2, blue: 0.05),     // Brown
+        Color(red: 0.25, green: 0.3, blue: 0.35),     // Slate
+        Color.black
     ]
     
     var isLightBackground: Bool {
@@ -47,7 +44,7 @@ struct QuoteEditorView: View {
             backgroundColors[colorIndex]
                 .ignoresSafeArea()
                 .animation(.easeInOut(duration: 0.5), value: colorIndex)
-                .onTapGesture { isFocused = false } // Dismiss keyboard on tap
+                .onTapGesture { isFocused = false }
             
             // LAYER 2: Editor
             VStack(spacing: 0) {
@@ -80,12 +77,10 @@ struct QuoteEditorView: View {
                 Spacer()
                 
                 // LAYER 3: Buttons
-                // Only show buttons if we are making a NEW quote, or if editing via the Gallery.
-                // In the "Feed" view, we might hide these to keep it clean, but let's keep them for now.
                 HStack(spacing: 40) {
                     Button(action: saveQuote) {
                         HStack {
-                            Image(systemName: "arrow.down.doc.fill")
+                            Image(systemName: "arrow.up.doc.fill") // Icon changed to UP
                             Text("Save")
                         }
                         .fontDesign(.serif)
@@ -98,7 +93,6 @@ struct QuoteEditorView: View {
                         .shadow(radius: 5)
                     }
                     
-                    // Only show Grid button if we are NOT in "Edit Mode" (passed from gallery)
                     if quoteToEdit == nil {
                         NavigationLink(destination: QuoteListView()) {
                             Image(systemName: "square.grid.2x2")
@@ -127,7 +121,6 @@ struct QuoteEditorView: View {
                     .zIndex(100)
             }
         }
-        // Load data if editing
         .onAppear {
             if let existing = quoteToEdit {
                 quoteText = existing.text
@@ -135,8 +128,8 @@ struct QuoteEditorView: View {
                 colorIndex = existing.colorIndex
             }
         }
-        // GESTURES
-        .gesture(
+        // USE SIMULTANEOUS GESTURE to allow scrolling history
+        .simultaneousGesture(
             DragGesture()
                 .onEnded { value in
                     let horizontalAmount = value.translation.width
@@ -150,15 +143,15 @@ struct QuoteEditorView: View {
                             changeColor(direction: -1)
                         }
                     }
-                    // Vertical Swipe Down (Save) - Only if creating NEW
-                    else if verticalAmount > 100 && quoteToEdit == nil {
+                    // Vertical Swipe UP (Save) - Only if creating NEW
+                    // We check < -100 (Negative means finger moved UP)
+                    else if verticalAmount < -100 && quoteToEdit == nil {
                         saveQuote()
                     }
                 }
         )
     }
     
-    // LOGIC
     func changeColor(direction: Int) {
         withAnimation {
             let count = backgroundColors.count
@@ -171,30 +164,28 @@ struct QuoteEditorView: View {
         guard !quoteText.isEmpty else { return }
         
         if let existing = quoteToEdit {
-            // UPDATE EXISTING
+            // Edit existing
             existing.text = quoteText
             existing.note = noteText
             existing.colorIndex = colorIndex
-            // We don't change the date, so it stays in its original place in history
         } else {
-            // CREATE NEW
+            // Create New
             let newQuote = Quote(text: quoteText, note: noteText, colorIndex: colorIndex)
             modelContext.insert(newQuote)
             
-            // Reset for next entry
+            // Visual Reset
+            // Because this is a SwiftUI List, the new quote will appear ABOVE us
+            // And this view will remain "blank" at the bottom
             quoteText = ""
             noteText = ""
         }
         
-        isFocused = false // Hide keyboard
+        isFocused = false
         
         withAnimation { showSaveConfirmation = true }
         DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
             withAnimation { showSaveConfirmation = false }
-            // If we were editing, we might want to close the window
-            if quoteToEdit != nil {
-                dismiss()
-            }
+            if quoteToEdit != nil { dismiss() }
         }
     }
 }
