@@ -51,14 +51,14 @@ struct QuoteEditorView: View {
                     .font(.title2)
                     .scrollContentBackground(.hidden) // Removes default white background
                     .frame(height: 300)
-                    .foregroundColor(colorIndex == 4 ? .black : .white) // Black text for Sepia, White for others
+                    .foregroundColor(colorIndex == 5 ? .black : .white) // Black text for Sepia, White for others
                 
                 // The "Note to Self" Input
                 TextField("note to self...", text: $noteText)
                     .fontDesign(.serif)
                     .font(.body)
                     .italic()
-                    .foregroundColor(colorIndex == 4 ? .black.opacity(0.7) : .white.opacity(0.7))
+                    .foregroundColor(colorIndex == 5 ? .black.opacity(0.7) : .white.opacity(0.7))
             }
             .padding()
             // This is the "Liquid Glass" Magic
