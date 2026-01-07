@@ -26,7 +26,7 @@ struct QuoteListView: View {
         Color(red: 0.0, green: 0.4, blue: 0.25),
         Color(red: 0.35, green: 0.2, blue: 0.05),
         Color(red: 0.8, green: 0.3, blue: 0.0),
-        Color(red: 0.9, green: 0.85, blue: 0.7)
+        Color(red: 0.925, green: 0.784, blue: 0.604)
     ]
     
     var body: some View {
