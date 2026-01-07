@@ -25,7 +25,7 @@ struct QuoteEditorView: View {
         Color(red: 0.0, green: 0.4, blue: 0.25),  // Emerald
         Color(red: 0.35, green: 0.2, blue: 0.05), // Rich Deep Warm Brown
         Color(red: 0.8, green: 0.3, blue: 0.0),   // Burnt Orange
-        Color(red: 0.9, green: 0.85, blue: 0.7)   // Sepia
+        Color(red: 0.925, green: 0.784, blue: 0.604)   // Sepia
     ]
     
     // Helper to determine if text should be dark or light
