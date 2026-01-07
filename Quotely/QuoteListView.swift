@@ -9,43 +9,39 @@ import SwiftUI
 import SwiftData
 
 struct QuoteListView: View {
-    // Connect to Database
     @Environment(\.modelContext) private var modelContext
     @Query(sort: \Quote.dateCreated, order: .reverse) private var quotes: [Quote]
     
-    // Grid Layout: 2 columns
-    let columns = [
-        GridItem(.flexible()),
-        GridItem(.flexible())
-    ]
+    let columns = [GridItem(.flexible()), GridItem(.flexible())]
     
-    // Same colors for reference
+    // Match the color array exactly
     let backgroundColors: [Color] = [
-        Color(red: 0.925, green: 0.784, blue: 0.604), // 0. Sepia
-        Color(red: 0.6, green: 0.05, blue: 0.1),      // 1. Ruby Red
-        Color(red: 0.8, green: 0.3, blue: 0.0),       // 2. Burnt Orange
-        Color(red: 0.95, green: 0.75, blue: 0.1),     // 3. Golden Yellow
-        Color(red: 0.0, green: 0.4, blue: 0.25),      // 4. Emerald Green
-        Color(red: 0.05, green: 0.2, blue: 0.5),      // 5. Sapphire Blue
-        Color(red: 0.35, green: 0.1, blue: 0.55),     // 6. Royal Purple
-        Color(red: 0.35, green: 0.2, blue: 0.05),     // 7. Rich Brown
-        Color(red: 0.25, green: 0.3, blue: 0.35),     // 8. Slate Gray
-        Color.black                                   // 9. Black
+        Color(red: 0.925, green: 0.784, blue: 0.604),
+        Color(red: 0.6, green: 0.05, blue: 0.1),
+        Color(red: 0.8, green: 0.3, blue: 0.0),
+        Color(red: 0.95, green: 0.75, blue: 0.1),
+        Color(red: 0.0, green: 0.4, blue: 0.25),
+        Color(red: 0.05, green: 0.2, blue: 0.5),
+        Color(red: 0.35, green: 0.1, blue: 0.55),
+        Color(red: 0.35, green: 0.2, blue: 0.05),
+        Color(red: 0.25, green: 0.3, blue: 0.35),
+        Color.black
     ]
     
     var body: some View {
-        NavigationStack {
-            ScrollView {
-                if quotes.isEmpty {
-                    ContentUnavailableView("No Quotes Yet", systemImage: "book.closed", description: Text("Swipe down on the main screen to save your first quote."))
-                } else {
-                    LazyVGrid(columns: columns, spacing: 15) {
-                        ForEach(quotes) { quote in
+        ScrollView {
+            if quotes.isEmpty {
+                ContentUnavailableView("No Quotes Yet", systemImage: "book.closed")
+            } else {
+                LazyVGrid(columns: columns, spacing: 15) {
+                    ForEach(quotes) { quote in
+                        // Wrap each tile in a NavigationLink to Edit it
+                        NavigationLink(destination: QuoteEditorView(quoteToEdit: quote)) {
                             VStack(alignment: .leading, spacing: 8) {
                                 Text(quote.text)
                                     .fontDesign(.serif)
                                     .font(.headline)
-                                    .lineLimit(4) // Only show first 4 lines
+                                    .lineLimit(4)
                                     .multilineTextAlignment(.leading)
                                     .foregroundColor((quote.colorIndex == 0 || quote.colorIndex == 3) ? .black : .white)
                                 
@@ -53,30 +49,24 @@ struct QuoteListView: View {
                                 
                                 Text(quote.dateCreated.formatted(date: .abbreviated, time: .omitted))
                                     .font(.caption)
-                                    .foregroundColor(quote.colorIndex == 5 ? .black.opacity(0.6) : .white.opacity(0.6))
+                                    .foregroundColor((quote.colorIndex == 0 || quote.colorIndex == 3) ? .black.opacity(0.6) : .white.opacity(0.6))
                             }
-                            .frame(height: 150) // Square-ish tile
+                            .frame(height: 150)
                             .frame(maxWidth: .infinity, alignment: .leading)
                             .padding()
                             .background(backgroundColors[quote.colorIndex])
                             .clipShape(RoundedRectangle(cornerRadius: 16))
                             .overlay(
-                                // Subtle border
                                 RoundedRectangle(cornerRadius: 16)
                                     .stroke(.white.opacity(0.2), lineWidth: 1)
                             )
                         }
                     }
-                    .padding()
                 }
+                .padding()
             }
-            .navigationTitle("My Journal")
-            .background(Color.black.ignoresSafeArea()) // Dark background for the library
         }
+        .navigationTitle("My Quotes") // <--- Renamed
+        .background(Color.black.ignoresSafeArea())
     }
-}
-
-#Preview {
-    QuoteListView()
-        .modelContainer(for: Quote.self, inMemory: true)
 }
