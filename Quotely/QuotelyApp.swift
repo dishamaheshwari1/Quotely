@@ -25,7 +25,7 @@ struct QuotelyApp: App {
 
     var body: some Scene {
         WindowGroup {
-            ContentView()
+            QuoteEditorView()
         }
         .modelContainer(sharedModelContainer)
     }
