@@ -21,34 +21,36 @@ struct MainFeedView: View {
                 ScrollView(.vertical) {
                     LazyVStack(spacing: 0) {
                         
-                        // 1. HISTORY FEED
+                        // 1. HISTORY FEED (Scroll UP to see these)
                         ForEach(historyQuotes) { quote in
                             QuoteEditorView(quote: quote)
-                                .containerRelativeFrame(.vertical) // Takes up full screen
-                                .id(quote.id) // ID for scrolling
+                                .containerRelativeFrame(.vertical)
+                                .id(quote.id)
                         }
                         
-                        // 2. NEW ENTRY (The Bottom Page)
+                        // 2. NEW ENTRY (Bottom Page - Default Launch)
                         QuoteEditorView(quote: nil)
                             .containerRelativeFrame(.vertical)
                             .id("NEW_ENTRY")
                     }
-                    .scrollTargetLayout() // Essential for scrolling to IDs
+                    .scrollTargetLayout()
                 }
-                .scrollTargetBehavior(.paging) // Snaps to pages
+                .scrollTargetBehavior(.paging)
                 .scrollIndicators(.hidden)
                 .ignoresSafeArea()
                 .background(.black)
+                // Ensures we start at the New Entry at the bottom
+                .defaultScrollAnchor(.bottom)
                 .onAppear {
-                    // SCROLL POSITION LOGIC
+                    // Logic to handle Library navigation
                     if let target = startID {
-                        // Jump to specific quote from Library
-                        // Small delay to ensure layout is ready
-                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                        // If coming from Library, jump to that quote
+                        // Small delay to ensure layout is computed
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) {
                             proxy.scrollTo(target, anchor: .center)
                         }
                     } else {
-                        // Default launch: Jump to New Entry at bottom
+                        // Redundant check to ensure we are at bottom on launch
                         proxy.scrollTo("NEW_ENTRY", anchor: .bottom)
                     }
                 }

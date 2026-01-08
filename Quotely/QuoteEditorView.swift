@@ -58,7 +58,7 @@ struct QuoteEditorView: View {
                 .animation(.easeInOut(duration: 0.3), value: activeColorIndex)
                 .onTapGesture { isFocused = false }
             
-            // 2. CENTERED TEXT (Floating)
+            // 2. CENTERED TEXT
             VStack(spacing: 25) {
                 Spacer()
                 
@@ -90,8 +90,7 @@ struct QuoteEditorView: View {
                 
                 Spacer()
             }
-            // Add padding at the bottom so text doesn't get hidden behind the toolbar
-            .padding(.bottom, 80)
+            .padding(.bottom, 90) // Clear the toolbar
             .frame(maxWidth: .infinity, maxHeight: .infinity)
             
             // 3. FEEDBACK OVERLAY
@@ -108,28 +107,27 @@ struct QuoteEditorView: View {
         // 4. LIQUID TOOLBAR (FIXED OVERLAY)
         .overlay(alignment: .bottom) {
             HStack {
-                // LEFT GROUP: [Delete | Edit | Save | Grid]
+                // LEFT GROUP: [Edit | Save | Delete | Grid]
                 HStack(spacing: 22) {
                     
-                    // DELETE BUTTON
-                    Button(action: deleteAction) {
-                        Image(systemName: "trash")
-                    }
-                    
-                    // EDIT / KEYBOARD TOGGLE
+                    // 1. EDIT / KEYBOARD TOGGLE
                     Button { isFocused.toggle() } label: {
-                        // "Checkmark" when typing, "Pencil in Box" when viewing
                         Image(systemName: isFocused ? "checkmark" : "square.and.pencil")
                     }
                     
-                    // SAVE BUTTON
+                    // 2. SAVE BUTTON (Standard Icon)
                     Button(action: saveAction) {
-                        Image(systemName: showSaveFeedback ? "checkmark" : "arrow.up.circle")
+                        Image(systemName: showSaveFeedback ? "checkmark" : "square.and.arrow.down")
                     }
                     .disabled(isNewEntryMode && tempText.isEmpty)
                     .opacity((isNewEntryMode && tempText.isEmpty) ? 0.4 : 1.0)
                     
-                    // GRID / LIBRARY
+                    // 3. DELETE BUTTON (Trash Can)
+                    Button(action: deleteAction) {
+                        Image(systemName: "trash")
+                    }
+                    
+                    // 4. GRID / LIBRARY
                     NavigationLink(destination: QuoteListView()) {
                         Image(systemName: "square.grid.2x2")
                     }
@@ -138,13 +136,14 @@ struct QuoteEditorView: View {
                 .foregroundColor(textColor)
                 .padding(.vertical, 14)
                 .padding(.horizontal, 24)
-                // THE LIQUID GLASS LOOK
-                .background(.ultraThinMaterial)
+                // --- TRUE LIQUID GLASS STYLE ---
+                .background(.ultraThinMaterial) // Blurs what is behind
+                .background(Color.white.opacity(0.1)) // Adds a glass tint
                 .clipShape(Capsule())
-                // Add a subtle border to define the glass edge
+                .shadow(color: .black.opacity(0.15), radius: 10, x: 0, y: 5) // Lift it off the bg
                 .overlay(
                     Capsule()
-                        .stroke(.white.opacity(0.2), lineWidth: 0.5)
+                        .stroke(.white.opacity(0.3), lineWidth: 1) // Crisp edge highlight
                 )
                 
                 Spacer()
@@ -156,10 +155,12 @@ struct QuoteEditorView: View {
                         .foregroundColor(textColor)
                         .padding(14)
                         .background(.ultraThinMaterial)
+                        .background(Color.white.opacity(0.1))
                         .clipShape(Circle())
+                        .shadow(color: .black.opacity(0.15), radius: 10, x: 0, y: 5)
                         .overlay(
                             Circle()
-                                .stroke(.white.opacity(0.2), lineWidth: 0.5)
+                                .stroke(.white.opacity(0.3), lineWidth: 1)
                         )
                 }
             }
@@ -190,15 +191,12 @@ struct QuoteEditorView: View {
     func deleteAction() {
         withAnimation {
             if isNewEntryMode {
-                // Just clear the text
                 tempText = ""
                 tempNote = ""
                 isFocused = false
             } else {
-                // Delete from database
                 if let q = quote {
                     modelContext.delete(q)
-                    // Optional: Visual feedback or navigation logic could go here
                 }
             }
         }
@@ -236,7 +234,6 @@ struct QuoteEditorView: View {
                 withAnimation { showSaveFeedback = false }
             }
         } else {
-            // Existing quotes auto-save, but we show feedback
             withAnimation { showSaveFeedback = true }
             isFocused = false
             DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
