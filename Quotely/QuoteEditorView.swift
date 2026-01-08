@@ -14,19 +14,20 @@ struct QuoteEditorView: View {
     
     // --- INPUTS ---
     let quote: Quote?
+    // New Input: Should we show the grid button?
+    var showGridButton: Bool = true
     
     var isNewEntryMode: Bool { quote == nil }
     
-    // --- LOCAL STATE (For New Entries) ---
+    // --- LOCAL STATE ---
     @State private var tempText: String = ""
     @State private var tempNote: String = ""
     @State private var tempColorIndex: Int = 0
     
-    // --- UI STATE ---
     @FocusState private var isFocused: Bool
     @State private var showSaveFeedback: Bool = false
     
-    // --- JEWEL TONES ---
+    // --- COLORS ---
     let backgroundColors: [Color] = [
         Color(red: 0.925, green: 0.784, blue: 0.604), // Sepia
         Color(red: 0.6, green: 0.05, blue: 0.1),      // Ruby
@@ -62,7 +63,6 @@ struct QuoteEditorView: View {
             VStack(spacing: 25) {
                 Spacer()
                 
-                // MAIN QUOTE INPUT
                 TextField("type your quote here", text: Binding(
                     get: { isNewEntryMode ? tempText : quote!.text },
                     set: { val in if isNewEntryMode { tempText = val } else { quote!.text = val } }
@@ -75,7 +75,6 @@ struct QuoteEditorView: View {
                 .focused($isFocused)
                 .padding(.horizontal, 24)
                 
-                // NOTE TO SELF INPUT
                 TextField("note to self...", text: Binding(
                     get: { isNewEntryMode ? tempNote : quote!.note },
                     set: { val in if isNewEntryMode { tempNote = val } else { quote!.note = val } }
@@ -90,10 +89,10 @@ struct QuoteEditorView: View {
                 
                 Spacer()
             }
-            .padding(.bottom, 90) // Clear the toolbar
+            .padding(.bottom, 90)
             .frame(maxWidth: .infinity, maxHeight: .infinity)
             
-            // 3. FEEDBACK OVERLAY
+            // 3. FEEDBACK
             if showSaveFeedback {
                 Image(systemName: "checkmark.circle.fill")
                     .font(.system(size: 70))
@@ -104,52 +103,51 @@ struct QuoteEditorView: View {
                     .zIndex(100)
             }
         }
-        // 4. LIQUID TOOLBAR (FIXED OVERLAY)
+        // 4. TOOLBAR OVERLAY
         .overlay(alignment: .bottom) {
             HStack {
-                // LEFT GROUP: [Edit | Save | Delete | Grid]
+                // LEFT GROUP
                 HStack(spacing: 22) {
                     
-                    // 1. EDIT / KEYBOARD TOGGLE
+                    // EDIT
                     Button { isFocused.toggle() } label: {
                         Image(systemName: isFocused ? "checkmark" : "square.and.pencil")
                     }
                     
-                    // 2. SAVE BUTTON (Standard Icon)
+                    // SAVE
                     Button(action: saveAction) {
                         Image(systemName: showSaveFeedback ? "checkmark" : "square.and.arrow.down")
                     }
                     .disabled(isNewEntryMode && tempText.isEmpty)
                     .opacity((isNewEntryMode && tempText.isEmpty) ? 0.4 : 1.0)
                     
-                    // 3. DELETE BUTTON (Trash Can)
+                    // DELETE
                     Button(action: deleteAction) {
                         Image(systemName: "trash")
                     }
                     
-                    // 4. GRID / LIBRARY
-                    NavigationLink(destination: QuoteListView()) {
-                        Image(systemName: "square.grid.2x2")
+                    // GRID / LIBRARY (CONDITIONAL)
+                    // Only show if we are NOT already in the library flow
+                    if showGridButton {
+                        NavigationLink(destination: QuoteListView()) {
+                            Image(systemName: "square.grid.2x2")
+                        }
                     }
                 }
                 .font(.system(size: 20, weight: .light))
                 .foregroundColor(textColor)
                 .padding(.vertical, 14)
                 .padding(.horizontal, 24)
-                // --- TRUE LIQUID GLASS STYLE ---
-                .background(.ultraThinMaterial) // Blurs what is behind
-                .background(Color.white.opacity(0.1)) // Adds a glass tint
+                .background(.ultraThinMaterial)
+                .background(Color.white.opacity(0.1))
                 .clipShape(Capsule())
-                .shadow(color: .black.opacity(0.15), radius: 10, x: 0, y: 5) // Lift it off the bg
-                .overlay(
-                    Capsule()
-                        .stroke(.white.opacity(0.3), lineWidth: 1) // Crisp edge highlight
-                )
+                .shadow(color: .black.opacity(0.15), radius: 10, x: 0, y: 5)
+                .overlay(Capsule().stroke(.white.opacity(0.3), lineWidth: 1))
                 
                 Spacer()
                 
-                // RIGHT GROUP: [Share]
-                Button(action: { /* Share Placeholder */ }) {
+                // RIGHT GROUP (Share)
+                Button(action: { /* Share */ }) {
                     Image(systemName: "square.and.arrow.up")
                         .font(.system(size: 20, weight: .light))
                         .foregroundColor(textColor)
@@ -158,16 +156,12 @@ struct QuoteEditorView: View {
                         .background(Color.white.opacity(0.1))
                         .clipShape(Circle())
                         .shadow(color: .black.opacity(0.15), radius: 10, x: 0, y: 5)
-                        .overlay(
-                            Circle()
-                                .stroke(.white.opacity(0.3), lineWidth: 1)
-                        )
+                        .overlay(Circle().stroke(.white.opacity(0.3), lineWidth: 1))
                 }
             }
             .padding(.horizontal, 24)
             .padding(.bottom, 20)
         }
-        // GESTURES
         .simultaneousGesture(
             DragGesture(minimumDistance: 30)
                 .onEnded { value in
@@ -175,29 +169,21 @@ struct QuoteEditorView: View {
                     let vertical = value.translation.height
                     
                     if abs(horizontal) > abs(vertical) {
-                        // Horizontal Swipe: Color Change
                         let direction = horizontal < 0 ? 1 : -1
                         changeColor(direction: direction)
                     } else if vertical < -100 && isNewEntryMode {
-                        // Vertical Swipe Up: Save (Only New Entry)
                         saveAction()
                     }
                 }
         )
     }
     
-    // --- LOGIC ---
-    
     func deleteAction() {
         withAnimation {
             if isNewEntryMode {
-                tempText = ""
-                tempNote = ""
-                isFocused = false
+                tempText = ""; tempNote = ""; isFocused = false
             } else {
-                if let q = quote {
-                    modelContext.delete(q)
-                }
+                if let q = quote { modelContext.delete(q) }
             }
         }
     }
@@ -206,16 +192,12 @@ struct QuoteEditorView: View {
         withAnimation {
             let count = backgroundColors.count
             let current = activeColorIndex
-            
             var newIndex = current + direction
             if newIndex < 0 { newIndex = count - 1 }
             else if newIndex >= count { newIndex = 0 }
             
-            if isNewEntryMode {
-                tempColorIndex = newIndex
-            } else {
-                quote!.colorIndex = newIndex
-            }
+            if isNewEntryMode { tempColorIndex = newIndex }
+            else { quote!.colorIndex = newIndex }
         }
     }
     
@@ -224,21 +206,13 @@ struct QuoteEditorView: View {
             guard !tempText.isEmpty else { return }
             let newQuote = Quote(text: tempText, note: tempNote, colorIndex: tempColorIndex)
             modelContext.insert(newQuote)
-            
             withAnimation { showSaveFeedback = true }
-            tempText = ""
-            tempNote = ""
-            isFocused = false
-            
-            DispatchQueue.main.asyncAfter(deadline: .now() + 1.2) {
-                withAnimation { showSaveFeedback = false }
-            }
+            tempText = ""; tempNote = ""; isFocused = false
+            DispatchQueue.main.asyncAfter(deadline: .now() + 1.2) { withAnimation { showSaveFeedback = false } }
         } else {
             withAnimation { showSaveFeedback = true }
             isFocused = false
-            DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
-                withAnimation { showSaveFeedback = false }
-            }
+            DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) { withAnimation { showSaveFeedback = false } }
         }
     }
 }

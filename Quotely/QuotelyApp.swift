@@ -25,7 +25,10 @@ struct QuotelyApp: App {
 
     var body: some Scene {
         WindowGroup {
-            MainFeedView()
+            // THE ROOT NAVIGATION STACK
+            NavigationStack {
+                MainFeedView()
+            }
         }
         .modelContainer(sharedModelContainer)
     }
