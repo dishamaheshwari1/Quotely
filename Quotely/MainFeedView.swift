@@ -9,32 +9,50 @@ import SwiftUI
 import SwiftData
 
 struct MainFeedView: View {
-    // Sort Oldest to Newest, so the "Newest" is right above the blank page
+    // Sort Oldest to Newest. This puts history above the New Page.
     @Query(sort: \Quote.dateCreated, order: .forward) private var historyQuotes: [Quote]
+    
+    // Optional: If coming from library, which quote to jump to?
+    var startID: UUID?
     
     var body: some View {
         NavigationStack {
-            ScrollView(.vertical) {
-                LazyVStack(spacing: 0) {
-                    
-                    // PART 1: The History (Above the blank page)
-                    ForEach(historyQuotes) { quote in
-                        QuoteEditorView(quoteToEdit: quote)
+            ScrollViewReader { proxy in
+                ScrollView(.vertical) {
+                    LazyVStack(spacing: 0) {
+                        
+                        // 1. HISTORY FEED
+                        ForEach(historyQuotes) { quote in
+                            QuoteEditorView(quote: quote)
+                                .containerRelativeFrame(.vertical) // Takes up full screen
+                                .id(quote.id) // ID for scrolling
+                        }
+                        
+                        // 2. NEW ENTRY (The Bottom Page)
+                        QuoteEditorView(quote: nil)
                             .containerRelativeFrame(.vertical)
-                            .id(quote.id) // Identify for scrolling if needed
+                            .id("NEW_ENTRY")
                     }
-                    
-                    // PART 2: The New Entry (At the bottom)
-                    QuoteEditorView(quoteToEdit: nil)
-                        .containerRelativeFrame(.vertical)
-                        .id("new_entry_page")
+                    .scrollTargetLayout() // Essential for scrolling to IDs
+                }
+                .scrollTargetBehavior(.paging) // Snaps to pages
+                .scrollIndicators(.hidden)
+                .ignoresSafeArea()
+                .background(.black)
+                .onAppear {
+                    // SCROLL POSITION LOGIC
+                    if let target = startID {
+                        // Jump to specific quote from Library
+                        // Small delay to ensure layout is ready
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                            proxy.scrollTo(target, anchor: .center)
+                        }
+                    } else {
+                        // Default launch: Jump to New Entry at bottom
+                        proxy.scrollTo("NEW_ENTRY", anchor: .bottom)
+                    }
                 }
             }
-            .scrollTargetBehavior(.paging) // Snap to pages
-            .ignoresSafeArea()
-            .background(.black)
-            // This magic line makes the app open at the bottom (The Blank Page)
-            .defaultScrollAnchor(.bottom)
         }
     }
 }
