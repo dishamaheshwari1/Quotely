@@ -36,8 +36,7 @@ struct QuoteListView: View {
                 LazyVGrid(columns: columns, spacing: 12) {
                     ForEach(quotes) { quote in
                         // MAGIC LINK: Opens the Main Feed, anchored to THIS quote
-                        // ... inside the ForEach ...
-                        NavigationLink(destination: MainFeedView(startID: quote.id, hideGridButton: true)) {
+                        NavigationLink(destination: MainFeedView(startID: quote.id, isFromLibrary: true)) {
                             QuoteGridItem(quote: quote, color: backgroundColors[quote.colorIndex])
                         }
                     }

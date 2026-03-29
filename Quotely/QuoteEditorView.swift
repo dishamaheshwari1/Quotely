@@ -14,8 +14,9 @@ struct QuoteEditorView: View {
     
     // --- INPUTS ---
     let quote: Quote?
-    // New Input: Should we show the grid button?
-    var showGridButton: Bool = true
+    
+    // Context: Are we viewing this from the library?
+    var isFromLibrary: Bool = false
     
     var isNewEntryMode: Bool { quote == nil }
     
@@ -41,6 +42,10 @@ struct QuoteEditorView: View {
         Color.black
     ]
     
+    // Helpers for cleaner binding access
+    var currentText: String { isNewEntryMode ? tempText : quote!.text }
+    var currentNote: String { isNewEntryMode ? tempNote : quote!.note }
+    
     var activeColorIndex: Int {
         isNewEntryMode ? tempColorIndex : (quote?.colorIndex ?? 0)
     }
@@ -63,8 +68,9 @@ struct QuoteEditorView: View {
             VStack(spacing: 25) {
                 Spacer()
                 
+                // MAIN QUOTE INPUT
                 TextField("type your quote here", text: Binding(
-                    get: { isNewEntryMode ? tempText : quote!.text },
+                    get: { currentText },
                     set: { val in if isNewEntryMode { tempText = val } else { quote!.text = val } }
                 ), axis: .vertical)
                 .fontDesign(.serif)
@@ -75,17 +81,21 @@ struct QuoteEditorView: View {
                 .focused($isFocused)
                 .padding(.horizontal, 24)
                 
-                TextField("note to self...", text: Binding(
-                    get: { isNewEntryMode ? tempNote : quote!.note },
-                    set: { val in if isNewEntryMode { tempNote = val } else { quote!.note = val } }
-                ))
-                .fontDesign(.serif)
-                .font(.body)
-                .italic()
-                .multilineTextAlignment(.center)
-                .foregroundColor(textColor.opacity(0.6))
-                .tint(textColor)
-                .focused($isFocused)
+                // NOTE TO SELF INPUT (CONDITIONAL CENTERING)
+                // Only show if we are writing a NEW note, OR if the existing note has text.
+                if isNewEntryMode || !currentNote.isEmpty {
+                    TextField("note to self...", text: Binding(
+                        get: { currentNote },
+                        set: { val in if isNewEntryMode { tempNote = val } else { quote!.note = val } }
+                    ))
+                    .fontDesign(.serif)
+                    .font(.body)
+                    .italic()
+                    .multilineTextAlignment(.center)
+                    .foregroundColor(textColor.opacity(0.6))
+                    .tint(textColor)
+                    .focused($isFocused)
+                }
                 
                 Spacer()
             }
@@ -126,9 +136,14 @@ struct QuoteEditorView: View {
                         Image(systemName: "trash")
                     }
                     
-                    // GRID / LIBRARY (CONDITIONAL)
-                    // Only show if we are NOT already in the library flow
-                    if showGridButton {
+                    // SMART GRID BUTTON
+                    if isFromLibrary {
+                        // If we came from the library, this button acts as "Back"
+                        Button(action: { dismiss() }) {
+                            Image(systemName: "square.grid.2x2")
+                        }
+                    } else {
+                        // If we are on the Home screen, this opens the library
                         NavigationLink(destination: QuoteListView()) {
                             Image(systemName: "square.grid.2x2")
                         }
@@ -183,7 +198,10 @@ struct QuoteEditorView: View {
             if isNewEntryMode {
                 tempText = ""; tempNote = ""; isFocused = false
             } else {
-                if let q = quote { modelContext.delete(q) }
+                if let q = quote {
+                    modelContext.delete(q)
+                    if isFromLibrary { dismiss() }
+                }
             }
         }
     }

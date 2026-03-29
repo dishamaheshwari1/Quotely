@@ -11,35 +11,34 @@ import SwiftData
 struct MainFeedView: View {
     @Query(sort: \Quote.dateCreated, order: .forward) private var historyQuotes: [Quote]
     
-    // Inputs from Navigation
     var startID: UUID?
-    // If true, we hide the grid button in the editor (passed down)
-    var hideGridButton: Bool = false
+    var isFromLibrary: Bool = false
     
     var body: some View {
-        // NO NavigationStack here (It is in the App file now)
         ScrollViewReader { proxy in
             ScrollView(.vertical) {
                 LazyVStack(spacing: 0) {
                     
                     // 1. HISTORY FEED
                     ForEach(historyQuotes) { quote in
-                        // Pass 'showGridButton: !hideGridButton'
-                        QuoteEditorView(quote: quote, showGridButton: !hideGridButton)
-                            .containerRelativeFrame(.vertical)
+                        QuoteEditorView(quote: quote, isFromLibrary: isFromLibrary)
+                            // THE FIX: Absolute height instead of relative safe-area height
+                            .frame(height: UIScreen.main.bounds.height)
                             .id(quote.id)
                     }
                     
                     // 2. NEW ENTRY
-                    QuoteEditorView(quote: nil, showGridButton: !hideGridButton)
-                        .containerRelativeFrame(.vertical)
+                    QuoteEditorView(quote: nil, isFromLibrary: isFromLibrary)
+                        // THE FIX: Absolute height
+                        .frame(height: UIScreen.main.bounds.height)
                         .id("NEW_ENTRY")
                 }
                 .scrollTargetLayout()
             }
             .scrollTargetBehavior(.paging)
             .scrollIndicators(.hidden)
-            .ignoresSafeArea()
+            // Force the scrollview itself to ignore all boundaries
+            .ignoresSafeArea(.all)
             .background(.black)
             .defaultScrollAnchor(.bottom)
             .onAppear {
@@ -52,7 +51,8 @@ struct MainFeedView: View {
                 }
             }
         }
-        // THIS KILLS THE SHADOW / TOP BAR
+        .navigationBarBackButtonHidden(true)
         .toolbar(.hidden, for: .navigationBar)
+        .ignoresSafeArea(.all)
     }
 }
